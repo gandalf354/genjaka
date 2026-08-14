@@ -1,0 +1,2 @@
+ALTER TABLE user_profiles
+ADD COLUMN group_id BIGINT UNSIGNED NULL AFTER user_id;

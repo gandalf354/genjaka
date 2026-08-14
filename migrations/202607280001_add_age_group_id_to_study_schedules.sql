@@ -1,0 +1,2 @@
+ALTER TABLE study_schedules
+ADD COLUMN IF NOT EXISTS age_group_id BIGINT UNSIGNED NULL AFTER group_id;

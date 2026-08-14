@@ -1,0 +1,58 @@
+services:
+  genjaka:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: genjaka:latest
+    container_name: genjaka-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${APP_PORT:-8080}:80"
+      - "${API_PORT:-3001}:3001"
+    volumes:
+      - genjaka_uploads:/app/uploads
+    networks:
+      - genjaka_net
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    container_name: genjaka-mysql
+    restart: unless-stopped
+    command: [
+      "mysqld",
+      "--character-set-server=utf8mb4",
+      "--collation-server=utf8mb4_unicode_ci",
+      "--default-time-zone=+07:00"
+    ]
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-GenjakaRoot2026!}"
+      MYSQL_DATABASE: "${DB_NAME:-db_genjaka}"
+      MYSQL_USER: "${DB_USER:-genjaka}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-GenjakaDb2026!}"
+      TZ: "Asia/Jakarta"
+    ports:
+      - "${DB_PORT_PUBLISH:-3307}:3306"
+    volumes:
+      - genjaka_mysql:/var/lib/mysql
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD:-GenjakaRoot2026!}"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+      start_period: 20s
+    networks:
+      - genjaka_net
+
+volumes:
+  genjaka_uploads:
+  genjaka_mysql:
+
+networks:
+  genjaka_net:
+    driver: bridge
