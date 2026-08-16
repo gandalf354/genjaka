@@ -43,11 +43,17 @@ services:
       - genjaka_mysql:/var/lib/mysql
       - ./migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD:-GenjakaRoot2026!}"]
+      # PAKAI CMD-SHELL (bukan CMD) supaya env ${} diexpand di dalam container.
+      # Pakai fallback ke default password root jika env DB_ROOT_PASSWORD tidak diset.
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -uroot -p\"${DB_ROOT_PASSWORD:-GenjakaRoot2026!}\" || exit 1",
+        ]
       interval: 15s
       timeout: 10s
-      retries: 8
-      start_period: 20s
+      retries: 12
+      start_period: 60s
     networks:
       - genjaka_net
 
