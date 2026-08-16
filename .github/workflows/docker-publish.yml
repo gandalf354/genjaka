@@ -8,7 +8,10 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/genjaka
+  DEFAULT_DOCKERHUB_USER: "gandalf354"
+  # Jika DOCKERHUB_USERNAME tidak diset sebagai secret, workflow tetap bisa BUILD (tanpa push)
+  # ke nama default owner/genjaka agar mudah dicek tag/target image-nya.
+  IMAGE_NAME: ${{ format('{0}/genjaka', (secrets.DOCKERHUB_USERNAME || env.DEFAULT_DOCKERHUB_USER)) }}
 
 jobs:
   build-and-push:
@@ -19,6 +22,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Summarize Docker Hub config
+        run: |
+          echo "Target image name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          if [[ -n "${{ secrets.DOCKERHUB_USERNAME }}" && -n "${{ secrets.DOCKERHUB_TOKEN }}" ]]; then
+            echo "Secrets DOCKERHUB_USERNAME & DOCKERHUB_TOKEN: TERSEDIA (push akan dijalankan)."
+          else
+            echo "::notice title=Docker Hub secrets belum di-set::Workflow ini HANYA build (tidak push) karena secrets DOCKERHUB_USERNAME dan/atau DOCKERHUB_TOKEN kosong. Buka https://github.com/${{ github.repository }}/settings/secrets/actions lalu tambahkan kedua secrets agar image di-push ke Docker Hub."
+          fi
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
